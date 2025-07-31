@@ -1,48 +1,63 @@
-import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
-function ProductList() {
-  const [departments, setDepartments] = useState([]);
+export default function ProductList() {
   const [products, setProducts] = useState([]);
-  const [selectedDept, setSelectedDept] = useState('');
+  const [departments, setDepartments] = useState([]);
+  const [selectedDepartment, setSelectedDepartment] = useState("");
 
   useEffect(() => {
-    fetch('/api/departments')
+    fetch("http://localhost:5000/api/products")
       .then(res => res.json())
-      .then(data => setDepartments(data.departments || []));
+      .then(data => setProducts(data.products));
+
+    fetch("http://localhost:5000/api/departments")
+      .then(res => res.json())
+      .then(data => setDepartments(data.departments));
   }, []);
 
-  useEffect(() => {
-    const url = selectedDept
-      ? `/api/departments/${selectedDept}/products`
-      : '/api/products';
+  const filteredProducts = selectedDepartment
+    ? products.filter(p => p.department_id === parseInt(selectedDepartment))
+    : products;
 
-    fetch(url)
-      .then(res => res.json())
-      .then(data => setProducts(data.products || []));
-  }, [selectedDept]);
+  const getImage = (name) => {
+    switch (name.toLowerCase()) {
+      case "t-shirt": return "/src/images/tshirt.png";
+      case "jean": return "/src/images/jeans.png";
+      case "headphones": return "/src/images/headphones.png";
+      case "powerbank": return "/src/images/powerbank.png";
+      default: return "";
+    }
+  };
 
   return (
     <div>
       <h1>Products</h1>
+      <div style={{ textAlign: "center", marginBottom: "1rem" }}>
+        <label>Filter by Department: </label>
+        <select
+          value={selectedDepartment}
+          onChange={(e) => setSelectedDepartment(e.target.value)}
+        >
+          <option value="">All</option>
+          {departments.map(dep => (
+            <option key={dep.id} value={dep.id}>{dep.name}</option>
+          ))}
+        </select>
+      </div>
 
-      <label>Filter by Department: </label>
-      <select value={selectedDept} onChange={e => setSelectedDept(e.target.value)}>
-        <option value="">All</option>
-        {departments.map(dep => (
-          <option key={dep.id} value={dep.id}>{dep.name}</option>
+      <div className="product-list">
+        {filteredProducts.map(product => (
+          <div key={product.id} className="product-card">
+            <img src={getImage(product.name)} alt={product.name} />
+            <h3>
+              <Link to={`/products/${product.id}`} style={{ color: "#00ffff" }}>
+                {product.name} — ₹{product.price}
+              </Link>
+            </h3>
+          </div>
         ))}
-      </select>
-
-      <ul>
-        {products.map(p => (
-          <li key={p.id}>
-            <Link to={`/products/${p.id}`}>{p.name} — ₹{p.price}</Link>
-          </li>
-        ))}
-      </ul>
+      </div>
     </div>
   );
 }
-
-export default ProductList;
